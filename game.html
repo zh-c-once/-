@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  "Mingde Xundao - Defa Tongxing" Ideological Course Mini Game
+  Entry for Hebei University of Technology game design contest.
+  TODO before submission: search for 【 and replace the bracketed
+  placeholders (college / class / name) with your real info.
+  Encoding must stay UTF-8. Single file, no external resources.
+============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>德法同行·价值观大闯关</title>
+<style>
+  :root{
+    --red:#b91c1c;
+    --red-dark:#7f1d1d;
+    --red-deep:#991b1b;
+    --gold:#f59e0b;
+    --gold-light:#fcd34d;
+    --cream:#fdf6ec;
+    --paper:#fffdf8;
+    --ink:#3f3f46;
+    --ink-light:#71717a;
+    --ok:#15803d;
+    --bad:#dc2626;
+    --nation:#b91c1c;
+    --society:#9a3412;
+    --citizen:#854d0e;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
+    color:var(--ink);
+    background:linear-gradient(160deg,#7f1d1d 0%,#b91c1c 55%,#9a3412 100%);
+    min-height:100vh;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+  /* subtle dot texture over the background */
+  body::before{
+    content:"";
+    position:fixed;inset:0;
+    background-image:radial-gradient(rgba(255,255,255,.07) 1.5px,transparent 1.5px);
+    background-size:26px 26px;
+    pointer-events:none;
+  }
+  #app{max-width:860px;margin:0 auto;padding:0 14px 32px;position:relative;}
+
+  /* ---------- header ---------- */
+  header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 2px;gap:8px;
+  }
+  .brand{
+    color:#fff;font-size:15px;font-weight:700;letter-spacing:1px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .brand .emblem{
+    width:30px;height:30px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,var(--gold-light),var(--gold));
+    display:flex;align-items:center;justify-content:center;
+    color:var(--red-dark);font-weight:900;font-size:15px;
+    box-shadow:0 2px 6px rgba(0,0,0,.3);
+    flex:none;
+  }
+  .hud{display:flex;align-items:center;gap:8px;}
+  .pill{
+    background:rgba(0,0,0,.28);color:#fff;border:1px solid rgba(255,255,255,.35);
+    border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;
+    white-space:nowrap;
+  }
+  .pill b{color:var(--gold-light);}
+  #btn-sound{cursor:pointer;background:rgba(0,0,0,.28);}
+  #btn-sound:active{transform:scale(.94);}
+
+  /* ---------- screens ---------- */
+  .screen{display:none;animation:fadeIn .45s ease;}
+  .screen.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+
+  .card{
+    background:var(--paper);border-radius:18px;
+    box-shadow:0 10px 30px rgba(0,0,0,.28);
+    padding:24px 20px;position:relative;overflow:hidden;
+  }
+  .card::before{ /* gold top ribbon */
+    content:"";position:absolute;top:0;left:0;right:0;height:6px;
+    background:linear-gradient(90deg,var(--gold),var(--gold-light),var(--gold));
+  }
+
+  /* ---------- start screen ---------- */
+  .contest-tag{
+    text-align:center;color:#ffe9c9;font-size:12.5px;letter-spacing:2px;
+    margin:6px 0 10px;font-weight:600;
+  }
+  .game-title{
+    text-align:center;font-family:"STKaiti","KaiTi","STSong",serif;
+    font-size:clamp(30px,7vw,44px);color:#fff;letter-spacing:4px;
+    text-shadow:0 3px 0 rgba(0,0,0,.18),0 8px 24px rgba(0,0,0,.35);
+    margin-bottom:4px;font-weight:900;
+  }
+  .game-sub{
+    text-align:center;color:var(--gold-light);font-size:14px;letter-spacing:3px;
+    margin-bottom:16px;font-weight:700;
+  }
+  .info-table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px;}
+  .info-table th,.info-table td{
+    border:1px solid #f3d9b0;padding:9px 10px;text-align:left;vertical-align:top;
+  }
+  .info-table th{
+    background:#fdf0d7;color:var(--red-dark);width:88px;white-space:nowrap;
+    font-weight:800;
+  }
+  .info-table td{background:#fffaf0;line-height:1.55;}
+  .info-table .ph{color:var(--red);font-weight:800;}
+  .level-preview{display:flex;gap:10px;margin:16px 0 4px;}
+  .level-preview .lv{
+    flex:1;border:2px dashed #e8c58a;border-radius:12px;padding:12px 10px;
+    text-align:center;background:#fffaf0;
+  }
+  .lv .no{
+    display:inline-block;background:var(--red);color:#fff;border-radius:999px;
+    font-size:12px;padding:2px 10px;font-weight:800;margin-bottom:6px;
+  }
+  .lv .nm{font-weight:800;color:var(--red-dark);font-size:15px;margin-bottom:3px;}
+  .lv .ds{font-size:12px;color:var(--ink-light);line-height:1.5;}
+  .btn{
+    display:block;width:100%;border:none;cursor:pointer;
+    background:linear-gradient(180deg,var(--gold-light),var(--gold));
+    color:var(--red-dark);font-size:19px;font-weight:900;letter-spacing:6px;
+    padding:15px 0;border-radius:999px;margin-top:18px;
+    box-shadow:0 5px 0 #b45309,0 10px 20px rgba(0,0,0,.25);
+    transition:transform .08s ease,box-shadow .08s ease;
+    font-family:inherit;
+  }
+  .btn:active{transform:translateY(4px);box-shadow:0 1px 0 #b45309;}
+  .btn.small{font-size:15px;letter-spacing:2px;padding:12px 0;margin-top:14px;}
+
+  /* ---------- level banner ---------- */
+  .stage-head{
+    display:flex;align-items:center;justify-content:space-between;
+    margin:4px 2px 12px;color:#fff;gap:8px;flex-wrap:wrap;
+  }
+  .stage-title{
+    font-family:"STKaiti","KaiTi",serif;font-size:22px;font-weight:900;letter-spacing:2px;
+  }
+  .stage-tip{
+    background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.3);
+    font-size:12.5px;border-radius:999px;padding:4px 12px;
+  }
+  .progress-track{
+    height:8px;background:rgba(255,255,255,.25);border-radius:999px;
+    overflow:hidden;margin-bottom:14px;
+  }
+  .progress-bar{
+    height:100%;width:0%;border-radius:999px;
+    background:linear-gradient(90deg,var(--gold-light),var(--gold));
+    transition:width .35s ease;
+  }
+
+  /* ---------- level 1 : drag & drop ---------- */
+  #word-pool{
+    display:flex;flex-wrap:wrap;gap:10px;justify-content:center;
+    background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
+    border-radius:14px;padding:14px 10px;margin-bottom:14px;min-height:64px;
+  }
+  .chip{
+    background:#fff;color:var(--red-dark);
+    border:2px solid var(--red);border-radius:10px;
+    padding:10px 14px;font-size:17px;font-weight:800;letter-spacing:2px;
+    cursor:grab;touch-action:none;position:relative;
+    box-shadow:0 3px 0 rgba(127,29,29,.35);
+    transition:transform .12s ease,box-shadow .12s ease,opacity .2s;
+    font-family:"STKaiti","KaiTi",serif;
+  }
+  .chip.grabbed{cursor:grabbing;box-shadow:0 10px 22px rgba(0,0,0,.4);transform:scale(1.08) rotate(2deg);}
+  .chip.selected{outline:3px solid var(--gold);outline-offset:2px;}
+  .chip.placed{
+    cursor:default;box-shadow:none;border-color:currentColor;
+    animation:pop .3s ease;
+  }
+  @keyframes pop{0%{transform:scale(.4);}70%{transform:scale(1.15);}100%{transform:scale(1);}}
+  .chip.shake{animation:shake .45s ease;}
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    20%{transform:translateX(-7px);}40%{transform:translateX(7px);}
+    60%{transform:translateX(-5px);}80%{transform:translateX(5px);}
+  }
+  #zones{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  .drop-zone{
+    background:var(--paper);border-radius:14px;overflow:hidden;
+    border:3px dashed #d9b98a;min-height:170px;
+    display:flex;flex-direction:column;
+    transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease;
+  }
+  .drop-zone.hover{
+    border-color:var(--gold);transform:scale(1.03);
+    box-shadow:0 0 0 4px rgba(245,158,11,.35);
+  }
+  .drop-zone.deny{border-color:var(--bad);animation:shake .4s ease;}
+  .zone-head{
+    color:#fff;text-align:center;padding:9px 6px;font-weight:900;
+    font-size:16px;letter-spacing:3px;font-family:"STKaiti","KaiTi",serif;
+  }
+  .zone-head small{display:block;font-size:11px;letter-spacing:1px;opacity:.9;margin-top:2px;}
+  .drop-zone[data-layer="nation"] .zone-head{background:var(--nation);}
+  .drop-zone[data-layer="society"] .zone-head{background:var(--society);}
+  .drop-zone[data-layer="citizen"] .zone-head{background:var(--citizen);}
+  .zone-fill{
+    flex:1;display:flex;flex-wrap:wrap;gap:8px;padding:12px;
+    align-content:flex-start;justify-content:center;
+  }
+  .zone-fill .chip{font-size:15px;padding:8px 12px;}
+  .drop-zone[data-layer="nation"] .chip{color:var(--nation);}
+  .drop-zone[data-layer="society"] .chip{color:var(--society);}
+  .drop-zone[data-layer="citizen"] .chip{color:var(--citizen);}
+  .zone-hint{
+    text-align:center;font-size:11.5px;color:var(--ink-light);
+    padding:0 8px 10px;margin-top:auto;
+  }
+
+  /* ---------- level 2 : quiz ---------- */
+  .q-card .q-chapter{
+    display:inline-block;background:#fdf0d7;color:var(--society);
+    border:1px solid #e8c58a;border-radius:999px;font-size:12px;
+    padding:3px 12px;font-weight:700;margin-bottom:10px;
+  }
+  .q-text{
+    font-size:17.5px;font-weight:800;line-height:1.65;color:var(--ink);
+    margin-bottom:16px;
+  }
+  .opt{
+    display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+    background:#fffaf0;border:2px solid #ecd9b8;border-radius:12px;
+    padding:13px 14px;margin-bottom:10px;font-size:15px;line-height:1.5;
+    cursor:pointer;transition:border-color .15s,background .15s,transform .1s;
+    font-family:inherit;color:var(--ink);
+  }
+  .opt:not(:disabled):active{transform:scale(.985);}
+  .opt .key{
+    flex:none;width:26px;height:26px;border-radius:50%;
+    background:var(--red);color:#fff;font-weight:900;font-size:13px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .opt.correct{background:#ecfdf3;border-color:var(--ok);color:var(--ok);font-weight:800;}
+  .opt.correct .key{background:var(--ok);}
+  .opt.wrong{background:#fef2f2;border-color:var(--bad);color:var(--bad);}
+  .opt.wrong .key{background:var(--bad);}
+  .opt:disabled{cursor:default;}
+  .opt.dim{opacity:.55;}
+  .explain{
+    display:none;background:#fdf6e5;border-left:4px solid var(--gold);
+    border-radius:8px;padding:12px 14px;font-size:13.5px;line-height:1.7;
+    color:#5b4508;margin-top:6px;
+  }
+  .explain.show{display:block;animation:fadeIn .35s ease;}
+  .explain b{color:var(--red-dark);}
+
+  /* ---------- result ---------- */
+  .result-score{
+    text-align:center;font-size:64px;font-weight:900;color:var(--red);
+    font-family:"Georgia",serif;line-height:1;margin:8px 0 2px;
+  }
+  .result-max{text-align:center;color:var(--ink-light);font-size:13px;margin-bottom:10px;}
+  .result-rank{
+    text-align:center;font-family:"STKaiti","KaiTi",serif;font-size:26px;
+    color:var(--society);font-weight:900;letter-spacing:3px;margin-bottom:14px;
+  }
+  .stars{display:flex;justify-content:center;gap:6px;margin-bottom:14px;}
+  .stars svg{width:34px;height:34px;}
+  .breakdown{
+    display:flex;gap:10px;margin:14px 0;
+  }
+  .breakdown .bd{
+    flex:1;background:#fffaf0;border:1px solid #ecd9b8;border-radius:12px;
+    padding:12px 8px;text-align:center;
+  }
+  .bd .v{font-size:22px;font-weight:900;color:var(--red);}
+  .bd .k{font-size:12px;color:var(--ink-light);margin-top:3px;}
+  .recap{
+    background:#fdf0d7;border-radius:12px;padding:14px 16px;font-size:13px;
+    line-height:1.8;color:#5b4508;margin-top:6px;
+  }
+  .recap b{color:var(--red-dark);}
+  .recap .row{display:flex;gap:8px;margin-top:4px;}
+  .recap .tag{
+    flex:none;background:var(--red);color:#fff;border-radius:6px;
+    font-size:11px;padding:1px 8px;height:fit-content;margin-top:3px;font-weight:700;
+  }
+
+  /* ---------- footer ---------- */
+  footer{
+    margin-top:22px;text-align:center;color:#ffe9c9;font-size:12px;
+    line-height:2;letter-spacing:1px;
+  }
+  footer .author{
+    display:inline-block;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.3);
+    border-radius:999px;padding:6px 18px;font-size:13px;color:#fff;font-weight:700;
+    margin-bottom:4px;
+  }
+  footer .ph{color:var(--gold-light);}
+
+  /* ---------- toast ---------- */
+  #toast{
+    position:fixed;left:50%;bottom:80px;transform:translateX(-50%) translateY(20px);
+    background:rgba(0,0,0,.78);color:#fff;font-size:14px;padding:10px 20px;
+    border-radius:999px;opacity:0;pointer-events:none;transition:all .25s ease;
+    z-index:1200;white-space:nowrap;max-width:90vw;
+  }
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* ---------- knowledge overlay ---------- */
+  #overlay{
+    position:fixed;inset:0;background:rgba(60,10,10,.62);
+    display:none;align-items:center;justify-content:center;z-index:1100;
+    padding:20px;backdrop-filter:blur(2px);
+  }
+  #overlay.show{display:flex;animation:fadeIn .3s ease;}
+  #overlay .panel{
+    background:var(--paper);border-radius:18px;max-width:520px;width:100%;
+    padding:24px 22px;box-shadow:0 20px 50px rgba(0,0,0,.4);
+    border-top:6px solid var(--gold);
+  }
+  #overlay h3{
+    text-align:center;color:var(--red);font-family:"STKaiti","KaiTi",serif;
+    font-size:22px;letter-spacing:3px;margin-bottom:12px;
+  }
+
+  /* ---------- confetti ---------- */
+  #confetti{position:fixed;inset:0;pointer-events:none;z-index:1300;overflow:hidden;}
+  #confetti i{
+    position:absolute;top:-14px;width:9px;height:14px;border-radius:2px;
+    animation:fall linear forwards;opacity:.95;
+  }
+  @keyframes fall{
+    to{transform:translateY(108vh) rotate(720deg);opacity:.6;}
+  }
+
+  /* ---------- responsive ---------- */
+  @media (max-width:640px){
+    #zones{grid-template-columns:1fr;}
+    .drop-zone{min-height:120px;}
+    .chip{font-size:16px;padding:9px 13px;}
+    .level-preview{flex-direction:column;}
+    .game-title{letter-spacing:2px;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="brand"><span class="emblem">德</span><span>明德寻道·德法同行</span></div>
+    <div class="hud">
+      <span class="pill">得分 <b id="hud-score">0</b></span>
+      <span class="pill" id="btn-sound">音效：开</span>
+    </div>
+  </header>
+
+  <!-- ============ start screen ============ -->
+  <section class="screen active" id="screen-start">
+    <div class="contest-tag">河北工业大学思政课主题小游戏设计大赛参赛作品</div>
+    <h1 class="game-title">德法同行<br>价值观大闯关</h1>
+    <div class="game-sub">—— 寻道于心 · 践法于行 ——</div>
+
+    <div class="card">
+      <table class="info-table">
+        <tr><th>适用课程</th><td>《思想道德与法治》</td></tr>
+        <tr><th>对应章节</th><td>第四章「明确价值要求 践行价值准则」（结合第一章、第三章、第六章相关知识点）</td></tr>
+        <tr><th>核心知识点</th><td>社会主义核心价值观的基本内容与科学内涵；人生目的与人生价值；中国精神；全面依法治国总目标</td></tr>
+        <tr><th>设 计 者</th><td>学院：<span class="ph">廊坊分校</span>　班级：<span class="ph">物联NZ242</span>　姓名：<span class="ph">崔政皓</span></td></tr>
+      </table>
+
+      <div class="level-preview">
+        <div class="lv">
+          <span class="no">第一关</span>
+          <div class="nm">价值观归位</div>
+          <div class="ds">将 12 个词条拖入<br>国家 / 社会 / 个人三个层面</div>
+        </div>
+        <div class="lv">
+          <span class="no">第二关</span>
+          <div class="nm">德法快答</div>
+          <div class="ds">8 道课程核心知识题<br>边答边学，即时解析</div>
+        </div>
+      </div>
+
+      <button class="btn" id="btn-start">开始闯关</button>
+    </div>
+  </section>
+
+  <!-- ============ level 1 : drag & drop ============ -->
+  <section class="screen" id="screen-level1">
+    <div class="stage-head">
+      <span class="stage-title">第一关 · 价值观归位</span>
+      <span class="stage-tip">拖动词条到对应层面（也可点选词条后再点层面）</span>
+    </div>
+    <div class="progress-track"><div class="progress-bar" id="l1-progress"></div></div>
+
+    <div id="word-pool"></div>
+
+    <div id="zones">
+      <div class="drop-zone" data-layer="nation">
+        <div class="zone-head">国家层面<small>建设什么样的国家</small></div>
+        <div class="zone-fill"></div>
+        <div class="zone-hint">已归位 <span class="cnt">0</span>/4</div>
+      </div>
+      <div class="drop-zone" data-layer="society">
+        <div class="zone-head">社会层面<small>建设什么样的社会</small></div>
+        <div class="zone-fill"></div>
+        <div class="zone-hint">已归位 <span class="cnt">0</span>/4</div>
+      </div>
+      <div class="drop-zone" data-layer="citizen">
+        <div class="zone-head">个人层面<small>培育什么样的公民</small></div>
+        <div class="zone-fill"></div>
+        <div class="zone-hint">已归位 <span class="cnt">0</span>/4</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ level 2 : quiz ============ -->
+  <section class="screen" id="screen-level2">
+    <div class="stage-head">
+      <span class="stage-title">第二关 · 德法快答</span>
+      <span class="stage-tip" id="q-counter">第 1 / 8 题</span>
+    </div>
+    <div class="progress-track"><div class="progress-bar" id="l2-progress"></div></div>
+
+    <div class="card q-card">
+      <span class="q-chapter" id="q-chapter"></span>
+      <div class="q-text" id="q-text"></div>
+      <div id="q-options"></div>
+      <div class="explain" id="q-explain"></div>
+      <button class="btn small" id="btn-next" style="display:none;">下一题</button>
+    </div>
+  </section>
+
+  <!-- ============ result screen ============ -->
+  <section class="screen" id="screen-result">
+    <div class="stage-head"><span class="stage-title">闯关完成</span></div>
+    <div class="card">
+      <div class="stars" id="stars"></div>
+      <div class="result-score" id="final-score">0</div>
+      <div class="result-max">满分 100 分</div>
+      <div class="result-rank" id="rank"></div>
+      <div class="breakdown">
+        <div class="bd"><div class="v" id="bd-l1">0</div><div class="k">第一关得分 / 60</div></div>
+        <div class="bd"><div class="v" id="bd-l2">0</div><div class="k">第二关得分 / 40</div></div>
+        <div class="bd"><div class="v" id="bd-acc">0</div><div class="k">问答正确 / 8</div></div>
+      </div>
+      <div class="recap">
+        <b>知识点回顾 · 社会主义核心价值观</b>
+        <div class="row"><span class="tag">国家</span><span>富强、民主、文明、和谐 —— 建设什么样的国家</span></div>
+        <div class="row"><span class="tag">社会</span><span>自由、平等、公正、法治 —— 建设什么样的社会</span></div>
+        <div class="row"><span class="tag">公民</span><span>爱国、敬业、诚信、友善 —— 培育什么样的公民</span></div>
+      </div>
+      <button class="btn" id="btn-restart">再玩一次</button>
+    </div>
+  </section>
+
+  <footer>
+    <span class="author">学院：<span class="ph">廊坊分校</span>　班级：<span class="ph">物联NZ242</span>　姓名：<span class="ph">崔政皓</span></span><br>
+    河北工业大学「明德寻道·德法同行」思政课主题小游戏设计大赛参赛作品<br>
+    适用课程：《思想道德与法治》 · 第四章 明确价值要求 践行价值准则
+  </footer>
+</div>
+
+<!-- knowledge summary overlay between the two levels -->
+<div id="overlay">
+  <div class="panel">
+    <h3>第一关通关 · 知识点小结</h3>
+    <div class="recap" style="margin:0;">
+      <div class="row"><span class="tag">国家</span><span><b>富强、民主、文明、和谐</b><br>是国家层面的价值目标</span></div>
+      <div class="row"><span class="tag">社会</span><span><b>自由、平等、公正、法治</b><br>是社会层面的价值取向</span></div>
+      <div class="row"><span class="tag">公民</span><span><b>爱国、敬业、诚信、友善</b><br>是公民个人层面的价值准则</span></div>
+      <div style="margin-top:10px;">社会主义核心价值观把涉及国家、社会、公民的价值要求融为一体，是当代中国精神的集中体现。</div>
+    </div>
+    <button class="btn" id="btn-level2">进入第二关</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="confetti"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- data ---------------- */
+  var WORDS = [
+    {text:"富强",layer:"nation"},{text:"民主",layer:"nation"},
+    {text:"文明",layer:"nation"},{text:"和谐",layer:"nation"},
+    {text:"自由",layer:"society"},{text:"平等",layer:"society"},
+    {text:"公正",layer:"society"},{text:"法治",layer:"society"},
+    {text:"爱国",layer:"citizen"},{text:"敬业",layer:"citizen"},
+    {text:"诚信",layer:"citizen"},{text:"友善",layer:"citizen"}
+  ];
+
+  var QUESTIONS = [
+    {
+      chapter:"第四章 · 明确价值要求 践行价值准则",
+      q:"社会主义核心价值观中，属于国家层面价值目标的是？",
+      options:["富强、民主、文明、和谐","自由、平等、公正、法治","爱国、敬业、诚信、友善","改革、创新、包容、厚德"],
+      answer:0,
+      explain:"富强、民主、文明、和谐是国家层面的价值目标，回答了「建设什么样的国家」这一重大问题。"
+    },
+    {
+      chapter:"第四章 · 明确价值要求 践行价值准则",
+      q:"「自由、平等、公正、法治」回答的核心问题是？",
+      options:["培育什么样的公民","建设什么样的社会","建设什么样的国家","实现什么样的人生"],
+      answer:1,
+      explain:"自由、平等、公正、法治是社会层面的价值取向，回答了「建设什么样的社会」的问题。"
+    },
+    {
+      chapter:"第四章 · 明确价值要求 践行价值准则",
+      q:"社会主义核心价值观中，公民个人层面的价值准则是？",
+      options:["富强、民主、文明、和谐","自由、平等、公正、法治","爱国、敬业、诚信、友善","明礼、守法、勤学、自强"],
+      answer:2,
+      explain:"爱国、敬业、诚信、友善是公民个人层面的价值准则，回答了「培育什么样的公民」的问题。"
+    },
+    {
+      chapter:"第四章 · 明确价值要求 践行价值准则",
+      q:"社会主义核心价值观的道义力量源于它的（　）。",
+      options:["先进性、人民性、真实性","传统性、民族性、世界性","理论性、实践性、时代性","理想性、信念性、奋斗性"],
+      answer:0,
+      explain:"社会主义核心价值观以其先进性、人民性、真实性而具有强大的道义力量，是真实可信、切实可行的价值遵循。"
+    },
+    {
+      chapter:"第一章 · 领悟人生真谛 把握人生方向",
+      q:"人生观中，回答「人为什么活着」这一根本问题的是？",
+      options:["人生态度","人生目的","人生价值","人生理想"],
+      answer:1,
+      explain:"人生目的是人生观的核心，回答「人为什么活着」的问题，决定人生道路、人生态度和人生价值选择。"
+    },
+    {
+      chapter:"第一章 · 领悟人生真谛 把握人生方向",
+      q:"评价人生价值的根本尺度，是看一个人的实践活动（　）。",
+      options:["是否获得丰厚的物质回报","是否符合社会发展的客观规律、是否促进了历史的进步","是否得到他人的赞扬","是否实现个人名利双收"],
+      answer:1,
+      explain:"评价人生价值的根本尺度，是看一个人的实践活动是否符合社会发展的客观规律，是否促进了历史的进步。"
+    },
+    {
+      chapter:"第三章 · 继承优良传统 弘扬中国精神",
+      q:"中华民族精神的核心是？",
+      options:["改革创新","爱国主义","自强不息","勤劳勇敢"],
+      answer:1,
+      explain:"爱国主义是中华民族精神的核心；改革创新是时代精神的核心。二者共同构成中国精神的重要内容。"
+    },
+    {
+      chapter:"第六章 · 学习法治思想 提升法治素养",
+      q:"全面依法治国的总目标是？",
+      options:["建设中国特色社会主义法治体系，建设社会主义法治国家","实现全民守法","完善党内法规体系","建设高素质法治工作队伍"],
+      answer:0,
+      explain:"全面依法治国的总目标是建设中国特色社会主义法治体系、建设社会主义法治国家。"
+    }
+  ];
+
+  /* ---------------- state ---------------- */
+  var state = {
+    score:0, sound:true,
+    placed:0, wrong:0, l1Score:0,
+    qIndex:0, qCorrect:0, l2Score:0, answered:false
+  };
+
+  /* ---------------- tiny helpers ---------------- */
+  function $(sel){ return document.querySelector(sel); }
+  function $all(sel){ return Array.prototype.slice.call(document.querySelectorAll(sel)); }
+  function shuffle(arr){
+    var a = arr.slice();
+    for(var i=a.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var t=a[i];a[i]=a[j];a[j]=t;
+    }
+    return a;
+  }
+  function show(id){
+    $all(".screen").forEach(function(s){ s.classList.remove("active"); });
+    document.getElementById(id).classList.add("active");
+    window.scrollTo(0,0);
+  }
+  var toastTimer=null;
+  function toast(msg){
+    var t=$("#toast");
+    t.textContent=msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){ t.classList.remove("show"); },1600);
+  }
+  function updateHud(){ $("#hud-score").textContent = state.score; }
+
+  /* ---------------- sound (WebAudio, no external files) ---------------- */
+  var audioCtx=null;
+  function ensureAudio(){
+    if(!audioCtx){
+      try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
+    }
+    if(audioCtx && audioCtx.state==="suspended"){ audioCtx.resume(); }
+  }
+  function tone(freq,dur,delay,type,vol){
+    if(!state.sound || !audioCtx){ return; }
+    var t0 = audioCtx.currentTime + (delay||0);
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    osc.type = type||"sine";
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol||0.12, t0);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0+dur);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(t0); osc.stop(t0+dur+0.02);
+  }
+  function playCorrect(){ tone(660,0.12,0); tone(880,0.16,0.09); }
+  function playWrong(){ tone(170,0.22,0,"square",0.07); }
+  function playWin(){ tone(523,0.14,0); tone(659,0.14,0.12); tone(784,0.14,0.24); tone(1047,0.3,0.36); }
+
+  $("#btn-sound").addEventListener("click",function(){
+    state.sound=!state.sound;
+    this.textContent = state.sound ? "音效：开" : "音效：关";
+  });
+
+  /* ---------------- level 1 : drag & drop ---------------- */
+  var pool=$("#word-pool");
+  var drag=null;          /* active pointer-drag state */
+  var selectedChip=null;  /* tap-to-select fallback */
+
+  function buildLevel1(){
+    state.placed=0; state.wrong=0; state.l1Score=0;
+    pool.innerHTML="";
+    $all(".zone-fill").forEach(function(z){ z.innerHTML=""; });
+    $all(".drop-zone .cnt").forEach(function(c){ c.textContent="0"; });
+    $("#l1-progress").style.width="0%";
+    selectedChip=null;
+
+    shuffle(WORDS).forEach(function(w){
+      var chip=document.createElement("div");
+      chip.className="chip";
+      chip.textContent=w.text;
+      chip.dataset.layer=w.layer;
+      chip.addEventListener("pointerdown",onChipDown);
+      pool.appendChild(chip);
+    });
+  }
+
+  function onChipDown(e){
+    var chip=e.currentTarget;
+    if(chip.classList.contains("placed")){ return; }
+    e.preventDefault();
+    ensureAudio();
+    try{ chip.setPointerCapture(e.pointerId); }catch(err){}
+    drag={chip:chip,x0:e.clientX,y0:e.clientY,moved:false,id:e.pointerId};
+    chip.classList.add("grabbed");
+  }
+
+  document.addEventListener("pointermove",function(e){
+    if(!drag){ return; }
+    var dx=e.clientX-drag.x0, dy=e.clientY-drag.y0;
+    if(!drag.moved && Math.sqrt(dx*dx+dy*dy)>8){
+      drag.moved=true;
+      startFloat(drag.chip);
+    }
+    if(drag.moved){
+      moveFloat(drag.chip,e.clientX,e.clientY);
+      highlightZoneAt(e.clientX,e.clientY);
+    }
+  });
+
+  document.addEventListener("pointerup",function(e){
+    if(!drag){ return; }
+    var chip=drag.chip, moved=drag.moved;
+    chip.classList.remove("grabbed");
+    if(moved){
+      var zone=zoneAt(e.clientX,e.clientY);
+      clearZoneHighlight();
+      stopFloat(chip);
+      if(zone){ tryPlace(chip,zone); }
+    }else{
+      /* treated as a tap: toggle selection for tap-to-place mode */
+      toggleSelect(chip);
+    }
+    drag=null;
+  });
+
+  document.addEventListener("pointercancel",function(){
+    if(!drag){ return; }
+    drag.chip.classList.remove("grabbed");
+    stopFloat(drag.chip);
+    clearZoneHighlight();
+    drag=null;
+  });
+
+  function startFloat(chip){
+    var r=chip.getBoundingClientRect();
+    chip.style.width=r.width+"px";
+    chip.style.position="fixed";
+    chip.style.left=r.left+"px";
+    chip.style.top=r.top+"px";
+    chip.style.margin="0";
+    chip.style.zIndex="1000";
+    chip.style.pointerEvents="none"; /* let elementFromPoint see the zone below */
+  }
+  function moveFloat(chip,x,y){
+    var w=chip.offsetWidth,h=chip.offsetHeight;
+    chip.style.left=(x-w/2)+"px";
+    chip.style.top=(y-h/2)+"px";
+  }
+  function stopFloat(chip){
+    chip.style.position="";
+    chip.style.left="";
+    chip.style.top="";
+    chip.style.width="";
+    chip.style.margin="";
+    chip.style.zIndex="";
+    chip.style.pointerEvents="";
+  }
+  function zoneAt(x,y){
+    var el=document.elementFromPoint(x,y);
+    return el ? el.closest(".drop-zone") : null;
+  }
+  function highlightZoneAt(x,y){
+    var z=zoneAt(x,y);
+    $all(".drop-zone").forEach(function(d){ d.classList.toggle("hover",d===z); });
+  }
+  function clearZoneHighlight(){
+    $all(".drop-zone").forEach(function(d){ d.classList.remove("hover"); });
+  }
+
+  function toggleSelect(chip){
+    if(selectedChip===chip){
+      chip.classList.remove("selected");
+      selectedChip=null;
+    }else{
+      if(selectedChip){ selectedChip.classList.remove("selected"); }
+      selectedChip=chip;
+      chip.classList.add("selected");
+      toast("已选中「"+chip.textContent+"」，点击一个层面完成归位");
+    }
+  }
+
+  /* tap-to-place: tap a zone with a chip selected */
+  $all(".drop-zone").forEach(function(zone){
+    zone.addEventListener("click",function(){
+      if(selectedChip){
+        var chip=selectedChip;
+        chip.classList.remove("selected");
+        selectedChip=null;
+        tryPlace(chip,zone);
+      }
+    });
+  });
+
+  function tryPlace(chip,zone){
+    if(chip.classList.contains("placed")){ return; }
+    if(chip.dataset.layer===zone.dataset.layer){
+      chip.classList.add("placed");
+      zone.querySelector(".zone-fill").appendChild(chip);
+      state.placed++;
+      state.l1Score+=5;
+      state.score+=5;
+      updateHud();
+      playCorrect();
+      var cnt=zone.querySelector(".cnt");
+      cnt.textContent=parseInt(cnt.textContent,10)+1;
+      $("#l1-progress").style.width=(state.placed/WORDS.length*100)+"%";
+      if(state.placed===WORDS.length){
+        setTimeout(function(){ $("#overlay").classList.add("show"); },550);
+      }
+    }else{
+      state.wrong++;
+      playWrong();
+      chip.classList.add("shake");
+      zone.classList.add("deny");
+      setTimeout(function(){ chip.classList.remove("shake"); },460);
+      setTimeout(function(){ zone.classList.remove("deny"); },420);
+      toast("「"+chip.textContent+"」不属于这个层面，再想一想");
+    }
+  }
+
+  /* ---------------- level 2 : quiz ---------------- */
+  function renderQuestion(){
+    var i=state.qIndex, q=QUESTIONS[i];
+    state.answered=false;
+    $("#q-counter").textContent="第 "+(i+1)+" / "+QUESTIONS.length+" 题";
+    $("#l2-progress").style.width=(i/QUESTIONS.length*100)+"%";
+    $("#q-chapter").textContent=q.chapter;
+    $("#q-text").textContent=(i+1)+". "+q.q;
+    $("#q-explain").className="explain";
+    $("#q-explain").innerHTML="";
+    $("#btn-next").style.display="none";
+
+    var box=$("#q-options");
+    box.innerHTML="";
+    var keys=["A","B","C","D"];
+    q.options.forEach(function(text,idx){
+      var b=document.createElement("button");
+      b.className="opt";
+      b.innerHTML='<span class="key">'+keys[idx]+'</span><span>'+text+'</span>';
+      b.addEventListener("click",function(){ answer(idx,b); });
+      box.appendChild(b);
+    });
+  }
+
+  function answer(idx,btn){
+    if(state.answered){ return; }
+    state.answered=true;
+    var q=QUESTIONS[state.qIndex];
+    var opts=$all("#q-options .opt");
+    opts.forEach(function(o){ o.disabled=true; });
+    if(idx===q.answer){
+      btn.classList.add("correct");
+      state.qCorrect++;
+      state.l2Score+=5;
+      state.score+=5;
+      updateHud();
+      playCorrect();
+    }else{
+      btn.classList.add("wrong");
+      opts[q.answer].classList.add("correct");
+      playWrong();
+    }
+    opts.forEach(function(o,i){
+      if(i!==q.answer && i!==idx){ o.classList.add("dim"); }
+    });
+    var ex=$("#q-explain");
+    ex.innerHTML="<b>知识点解析：</b>"+q.explain;
+    ex.classList.add("show");
+    var nb=$("#btn-next");
+    nb.style.display="block";
+    nb.textContent = (state.qIndex===QUESTIONS.length-1) ? "查看成绩" : "下一题";
+    $("#l2-progress").style.width=((state.qIndex+1)/QUESTIONS.length*100)+"%";
+  }
+
+  $("#btn-next").addEventListener("click",function(){
+    state.qIndex++;
+    if(state.qIndex<QUESTIONS.length){
+      renderQuestion();
+    }else{
+      finishGame();
+    }
+  });
+
+  /* ---------------- result ---------------- */
+  function finishGame(){
+    show("screen-result");
+    $("#bd-l1").textContent=state.l1Score;
+    $("#bd-l2").textContent=state.l2Score;
+    $("#bd-acc").textContent=state.qCorrect;
+
+    var total=state.score;
+    var rank,stars;
+    if(total>=90){ rank="思政之星 · 出类拔萃"; stars=3; }
+    else if(total>=75){ rank="德法兼优 · 表现出色"; stars=3; }
+    else if(total>=60){ rank="稳步向前 · 继续精进"; stars=2; }
+    else{ rank="再接再厉 · 未来可期"; stars=1; }
+    $("#rank").textContent=rank;
+
+    /* render star rating as inline svg */
+    var svg="";
+    for(var i=0;i<3;i++){
+      var fill = i<stars ? "#f59e0b" : "#e7e5e4";
+      svg+='<svg viewBox="0 0 24 24"><path fill="'+fill+'" d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.2 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z"/></svg>';
+    }
+    $("#stars").innerHTML=svg;
+
+    /* animated score count-up */
+    var el=$("#final-score"), cur=0;
+    var step=Math.max(1,Math.round(total/40));
+    el.textContent="0";
+    var timer=setInterval(function(){
+      cur+=step;
+      if(cur>=total){ cur=total; clearInterval(timer); }
+      el.textContent=cur;
+    },30);
+
+    if(total>=60){ playWin(); confetti(); }
+  }
+
+  function confetti(){
+    var box=$("#confetti");
+    box.innerHTML="";
+    var colors=["#f59e0b","#fcd34d","#ffffff","#fca5a5","#fde68a","#fecaca"];
+    for(var i=0;i<80;i++){
+      var c=document.createElement("i");
+      c.style.left=(Math.random()*100)+"vw";
+      c.style.background=colors[i%colors.length];
+      c.style.animationDuration=(2.4+Math.random()*2)+"s";
+      c.style.animationDelay=(Math.random()*0.9)+"s";
+      c.style.transform="rotate("+(Math.random()*360)+"deg)";
+      box.appendChild(c);
+    }
+    setTimeout(function(){ box.innerHTML=""; },5200);
+  }
+
+  /* ---------------- navigation ---------------- */
+  $("#btn-start").addEventListener("click",function(){
+    ensureAudio();
+    buildLevel1();
+    show("screen-level1");
+  });
+  $("#btn-level2").addEventListener("click",function(){
+    $("#overlay").classList.remove("show");
+    state.qIndex=0; state.qCorrect=0; state.l2Score=0;
+    renderQuestion();
+    show("screen-level2");
+  });
+  $("#btn-restart").addEventListener("click",function(){
+    state.score=0; state.qIndex=0; state.qCorrect=0;
+    state.l1Score=0; state.l2Score=0; state.placed=0; state.wrong=0;
+    updateHud();
+    show("screen-start");
+  });
+
+  updateHud();
+})();
+</script>
+</body>
+</html>
